@@ -1,7 +1,7 @@
-﻿using Microsoft.ML;
+using Microsoft.ML;
 using UsedCarPricePrediction;
 
-var mlContext  = new MLContext(seed:1);
+var mlContext  = new MLContext();
 
 var data  = mlContext.Data.LoadFromTextFile<UsedCarData>("used_cars_1000.csv", hasHeader: true, separatorChar: ',');
 
@@ -29,6 +29,7 @@ var predictions = model.Transform(split.TestSet);
 
 var metrics = mlContext.Regression.Evaluate(predictions, labelColumnName: "Price");
 
+Console.WriteLine("Predictions");
 Console.WriteLine($"R2:   {metrics.RSquared:0.###}");  
 Console.WriteLine($"MAE:  {metrics.MeanAbsoluteError:0.##}");
 Console.WriteLine($"RMSE: {metrics.RootMeanSquaredError:0.##}");
@@ -48,6 +49,19 @@ var sampleData = new UsedCarData
   Doors = 4
 };
 
+Console.WriteLine("");
+Console.WriteLine("Prediction Input Data");
+Console.WriteLine($"Make         {sampleData.Make}");
+Console.WriteLine($"Model        {sampleData.Model}");
+Console.WriteLine($"Year         {sampleData.Year}");
+Console.WriteLine($"Mileage      {sampleData.Mileage}");
+Console.WriteLine($"EngineSize   {sampleData.EngineSize}");
+Console.WriteLine($"Horsepower   {sampleData.Horsepower}");
+Console.WriteLine($"Transmission {sampleData.Transmission}");
+Console.WriteLine($"FuelType     {sampleData.FuelType}");
+Console.WriteLine($"Doors        {sampleData.Doors}");
+
 var prediction = predictionEngine.Predict(sampleData);
 
+Console.WriteLine("");
 Console.WriteLine($"Predictied Price: ${ prediction.Score:0}");
