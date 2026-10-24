@@ -1,0 +1,53 @@
+﻿using Microsoft.ML;
+using UsedCarPricePrediction;
+
+var mlContext  = new MLContext(seed:1);
+
+var data  = mlContext.Data.LoadFromTextFile<UsedCarData>("used_cars_1000.csv", hasHeader: true, separatorChar: ',');
+
+var split = mlContext.Data.TrainTestSplit(data, testFraction: 0.2);
+
+var pipeline = mlContext.Transforms.Text.FeaturizeText(
+                                          outputColumnName: "MakeFeatures",
+                                          inputColumnName: "Make")
+                        .Append(mlContext.Transforms.Text.FeaturizeText(
+                                          outputColumnName: "ModelFeatures",
+                                          inputColumnName: "Model"))
+                        .Append(mlContext.Transforms.Text.FeaturizeText(
+                                          outputColumnName: "TransmissionFeatures",
+                                          inputColumnName: "Transmission"))
+                        .Append(mlContext.Transforms.Text.FeaturizeText(
+                                          outputColumnName: "FuelTypeFeatures",
+                                          inputColumnName: "FuelType")) 
+                        .Append(mlContext.Transforms.Concatenate("Features", "MakeFeatures", "ModelFeatures", "TransmissionFeatures", "FuelTypeFeatures", "Mileage", "EngineSize", "Horsepower", "Doors"))                 
+                        .Append(mlContext.Transforms.NormalizeMinMax("Features"))
+                        .Append(mlContext.Regression.Trainers.Sdca(labelColumnName: "Price", featureColumnName: "Features"));
+
+var model = pipeline.Fit(split.TrainSet);
+
+var predictions = model.Transform(split.TestSet);
+
+var metrics = mlContext.Regression.Evaluate(predictions, labelColumnName: "Price");
+
+Console.WriteLine($"R2:   {metrics.RSquared:0.###}");  
+Console.WriteLine($"MAE:  {metrics.MeanAbsoluteError:0.##}");
+Console.WriteLine($"RMSE: {metrics.RootMeanSquaredError:0.##}");
+
+var predictionEngine = mlContext.Model.CreatePredictionEngine<UsedCarData, UsedCarPrediction>(model);
+
+var sampleData = new UsedCarData
+{
+  Make = "Toyota",
+  Model = "Rav4",
+  Year = 2018,
+  Mileage = 42000,
+  EngineSize = 2.5f,
+  Horsepower = 100,
+  Transmission = "Automatic",
+  FuelType = "Gas",
+  Doors = 4
+};
+
+var prediction = predictionEngine.Predict(sampleData);
+
+Console.WriteLine($"Predictied Price: ${ prediction.Score:0}");
