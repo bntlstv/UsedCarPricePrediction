@@ -25,11 +25,20 @@ var pipeline = mlContext.Transforms.Text.FeaturizeText(
 
 var model = pipeline.Fit(split.TrainSet);
 
+var trainSetPredictions = model.Transform(split.TrainSet);
+var pipelineMetrics = mlContext.Regression.Evaluate(trainSetPredictions, labelColumnName: "Price");
+
+Console.WriteLine("Train Set Predictions");
+Console.WriteLine($"R2:   {pipelineMetrics.RSquared:0.###}");
+Console.WriteLine($"MAE:  {pipelineMetrics.MeanAbsoluteError:0.##}");
+Console.WriteLine($"RMSE: {pipelineMetrics.RootMeanSquaredError:0.##}");
+
 var predictions = model.Transform(split.TestSet);
 
 var metrics = mlContext.Regression.Evaluate(predictions, labelColumnName: "Price");
 
-Console.WriteLine("Predictions");
+Console.WriteLine("");
+Console.WriteLine("Test Set Predictions");
 Console.WriteLine($"R2:   {metrics.RSquared:0.###}");  
 Console.WriteLine($"MAE:  {metrics.MeanAbsoluteError:0.##}");
 Console.WriteLine($"RMSE: {metrics.RootMeanSquaredError:0.##}");
